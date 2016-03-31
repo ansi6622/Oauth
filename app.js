@@ -8,7 +8,7 @@ var bodyParser = require('body-parser');
 var routes = require('./routes/index');
 var users = require('./routes/users');
 var LinkedInStrategy = require('passport-linkedin-oauth2').Strategy;
-
+var session = require('cookie-session');
 var app = express();
 var passport = require('passport');
 // view engine setup
@@ -24,6 +24,8 @@ app.use(bodyParser.urlencoded({
 }));
 app.use(cookieParser());
 app.use(passport.initialize());
+app.use(express.session({ secret: process.env.SECRETS }));
+
 // app.use(passport.session());
 app.use(express.static(path.join(__dirname, 'public')));
 
