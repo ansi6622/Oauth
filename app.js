@@ -8,7 +8,7 @@ var bodyParser = require('body-parser');
 var routes = require('./routes/index');
 var users = require('./routes/users');
 var LinkedInStrategy = require('passport-linkedin-oauth2').Strategy;
-var session = require('cookie-session');
+var cookieSession = require('cookie-session');
 var app = express();
 var passport = require('passport');
 // view engine setup
@@ -24,7 +24,9 @@ app.use(bodyParser.urlencoded({
 }));
 app.use(cookieParser());
 app.use(passport.initialize());
-app.use(express.session({ secret: process.env.SECRETS }));
+app.use(cookieSession({
+  name: "session",
+  secret: process.env.SECRETS }));
 
 // app.use(passport.session());
 app.use(express.static(path.join(__dirname, 'public')));
@@ -50,7 +52,8 @@ passport.use(new LinkedInStrategy({
   clientID: process.env.LINKEDIN_CLIENT_ID,
   clientSecret: process.env.LINKEDIN_CLIENT_SECRET,
   callbackURL: process.env.HOST + "/auth/linkedin/callback",
-  scope: ['r_emailaddress', 'r_basicprofile'],
+   scope: ['r_emailaddress', 'r_basicprofile'],
+  state: true
 }, function(accessToken, refreshToken, profile, done) {
   // asynchronous verification, for effect...
   process.nextTick(function () {
@@ -58,7 +61,7 @@ passport.use(new LinkedInStrategy({
     // represent the logged-in user. In a typical application, you would want
     // to associate the LinkedIn account with a user record in your database,
     // and return that user instead.
-    return done(null, profile);
+    return done(null, {id: profile.id, displayName: profile.displayName});
   });
 }));
 passport.serializeUser(function(user, done) {
@@ -71,9 +74,7 @@ passport.deserializeUser(function(user, done) {
 
 
 app.get('/auth/linkedin',
-  passport.authenticate('linkedin', {
-    state: 'SOME STATE'
-  }),
+  passport.authenticate('linkedin'),
   function(req, res) {
     // The request will be redirected to LinkedIn for authentication, so this
     // function will not be called.
@@ -82,7 +83,10 @@ app.get('/auth/linkedin/callback', passport.authenticate('linkedin', {
   successRedirect: '/',
   failureRedirect: '/login'
 }));
-
+app.use(function (req, res, next) {
+  res.locals.user = req.session.passport.user
+  next()
+})
 // above app.use('/', routes);...
 
 app.use('/', routes);
