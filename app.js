@@ -72,7 +72,11 @@ passport.deserializeUser(function(user, done) {
   done(null, user)
 });
 
-
+app.get('/logout', function(req, res) {
+    res.clearCookie('session');
+    res.clearCookie('session.sig');
+    res.redirect('/');
+});
 app.get('/auth/linkedin',
   passport.authenticate('linkedin'),
   function(req, res) {
@@ -87,6 +91,7 @@ app.use(function (req, res, next) {
   res.locals.user = req.session.passport.user
   next()
 })
+
 // above app.use('/', routes);...
 
 app.use('/', routes);
